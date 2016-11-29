@@ -311,14 +311,15 @@ int main(int argc, char* argv[]){
                   //and then L2 (if required),
                   //update the L1 and L2 access state variable;
                 bool isWriteHit = false;
-                for(unsigned int k=0; k<L1Cache.c.size(); k++){
-                    if(L1Cache.c[k].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == bitset<1>(0)){
+                for(unsigned int l=0; l<L1Cache.c.size(); l++){
+                    if(L1Cache.c[l].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == bitset<1>(0)){
                         L1AcceState = WM;
                         isWriteHit = false;
                     } else{
-                        if(L1Cache.c[k].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(tag_str_L1)){
+                        if(L1Cache.c[l].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(tag_str_L1)){
                             cout<<"Write Hit in L1"<<endl;
-                            L1Cache.c[k].dirty_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = bitset<1>(1);
+                            L1Cache.c[l].offset_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(offset_str_L1);
+                            L1Cache.c[l].dirty_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = bitset<1>(1);
                             L1AcceState = WH;
                             isWriteHit = true;
                             break;
@@ -330,14 +331,15 @@ int main(int argc, char* argv[]){
                 }
 
                 if(!isWriteHit){
-                    for(unsigned int l=0; l<L2Cache.c.size(); l++){
-                        if(L2Cache.c[l].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == bitset<1>(0)){
+                    for(unsigned int m=0; m<L2Cache.c.size(); m++){
+                        if(L2Cache.c[m].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == bitset<1>(0)){
                             L2AcceState = WM;
                             isWriteHit = false;
                         } else{
-                            if(L2Cache.c[l].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == L2Cache.stringToVectBool(tag_str_L2)){
+                            if(L2Cache.c[m].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == L2Cache.stringToVectBool(tag_str_L2)){
                                 cout<<"Write Hit in L2"<<endl;
-                                L2Cache.c[l].dirty_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = bitset<1>(1);
+                                L2Cache.c[m].offset_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = L2Cache.stringToVectBool(offset_str_L2);
+                                L2Cache.c[m].dirty_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = bitset<1>(1);
                                 L2AcceState = WH;
                                 isWriteHit = true;
                                 break;
