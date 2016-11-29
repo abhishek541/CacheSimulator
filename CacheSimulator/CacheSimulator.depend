@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1480207139 source:f:\study\nyu\codeblockproj\cachesimulator\main.cpp
+	<iostream>
+	<fstream>
+	<string>
+	<sstream>
+	<vector>
+	<iomanip>
+	<stdlib.h>
+	<cmath>
+	<bitset>
+
