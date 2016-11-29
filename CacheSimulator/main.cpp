@@ -49,6 +49,8 @@ class cache
         vector<vector<bool>> tag_arr;
         vector<vector<bool>> set_index_arr;
         vector<vector<bool>> offset_arr;
+        vector<bitset<1>> valid_bit_arr;
+        vector<bitset<1>> dirty_bit_arr;
 
         cache(){}
 
@@ -60,11 +62,15 @@ class cache
             tag_arr.resize(pow(2,s));
             set_index_arr.resize(pow(2,s));
             offset_arr.resize(pow(2,s));
+            valid_bit_arr.resize(pow(2,s));
+            dirty_bit_arr.resize(pow(2,s));
 
             for(unsigned int i = 0; i<pow(2,s); i++){
                 tag_arr[i].resize(t);
                 set_index_arr[i].resize(s);
                 offset_arr[i].resize(o);
+                valid_bit_arr[i] = bitset<1>(0);
+                dirty_bit_arr[i] = bitset<1>(0);
             }
         }
 };
@@ -121,12 +127,8 @@ int main(int argc, char* argv[]){
    // probably you may define a Cache class for L1 and L2, or any data structure you like
    cache_final L1Cache(cacheconfig.L1size, cacheconfig.L1blocksize, cacheconfig.L1setsize);
    cache_final L2Cache(cacheconfig.L2size, cacheconfig.L2blocksize, cacheconfig.L2setsize);
-//    if(cacheconfig.L1setsize > 1){
-//        cache L1_final [cacheconfig.L1setsize];
-//    }
-//    if(cacheconfig.L2setsize > 1){
-//        cache L2_final [cacheconfig.L2setsize];
-//    }
+
+    //cout<<"valid bit "<<L1Cache.c[0].valid_bit_arr[0]<<endl;
 
   int L1AcceState =0; // L1 access state variable, can be one of NA, RH, RM, WH, WM;
   int L2AcceState =0; // L2 access state variable, can be one of NA, RH, RM, WH, WM;
@@ -179,9 +181,10 @@ int main(int argc, char* argv[]){
                  bool isHit = false;
                  bool L1isFull, L2isFull = false;
                  for(unsigned int j=0; j<L1Cache.c.size(); j++){
-                    if((L1Cache.c(j).set_index_arr[(bitset<32>(set_index_str_L1)).to_ulong()]).empty()){
+                    if(L1Cache.c[j].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == bitset<1>(0)){
                             L1Cache.c[j].set_index_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(set_index_str_L1);
                             L1Cache.c[j].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(tag_str_L1);
+                            L1Cache.c[j].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = bitset<1>(1);
                             L1isFull = false;
                             L1AcceState = RM;
                             break;
@@ -195,13 +198,15 @@ int main(int argc, char* argv[]){
                             L1setVal = -1;
                         }
                         L1setVal++;
-                        if(L1Cache.c[x].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(tag_str_L1)){
+                        if((L1Cache.c[x].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(tag_str_L1)) &&
+                                (L1Cache.c[x].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == bitset<1>(1))){
                             cout << "hit in L1" << endl;
                             isHit = true;
                             L1AcceState = RH;
                             break;
                         } else {
-                            L1Cache.c[L1setVal].tag_arr = L1Cache.stringToVectBool(tag_str_L1);
+                            L1Cache.c[L1setVal].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(tag_str_L1);
+                            L1Cache.c[L1setVal].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = bitset<1>(1);
                             L1AcceState = RM;
                             break;
                         }
@@ -211,9 +216,10 @@ int main(int argc, char* argv[]){
 
                  if(!isHit){
                     for(unsigned int k=0; k<L2Cache.c.size(); k++){
-                        if((L2Cache.c(k).set_index_arr[(bitset<32>(set_index_str_L2)).to_ulong()]).empty()){
+                        if(L2Cache.c[k].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == bitset<1>(0)){
                                 L2Cache.c[k].set_index_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = L2Cache.stringToVectBool(set_index_str_L2);
                                 L2Cache.c[k].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = L2Cache.stringToVectBool(tag_str_L2);
+                                L2Cache.c[k].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = bitset<1>(1);
                                 L2isFull = false;
                                 L2AcceState = RM;
                                 break;
@@ -227,13 +233,15 @@ int main(int argc, char* argv[]){
                                 L2setVal = -1;
                             }
                             L2setVal++;
-                            if(L2Cache.c[y].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == L2Cache.stringToVectBool(tag_str_L2)){
+                            if((L2Cache.c[y].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == L2Cache.stringToVectBool(tag_str_L2)) &&
+                                (L2Cache.c[y].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == bitset<1>(1))){
                                 cout << "hit in L2" << endl;
                                 isHit = true;
                                 L2AcceState = RH;
                                 break;
                             } else {
-                                L2Cache.c[L2setVal].tag_arr = L2Cache.stringToVectBool(tag_str_L2);
+                                L2Cache.c[L2setVal].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = L2Cache.stringToVectBool(tag_str_L2);
+                                L2Cache.c[L2setVal].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = bitset<1>(1);
                                 L2AcceState = RM;
                                 break;
                             }
@@ -245,22 +253,42 @@ int main(int argc, char* argv[]){
                   // write access to the L1 Cache,
                   //and then L2 (if required),
                   //update the L1 and L2 access state variable;
-                bool isWriteHit=false;
-                for(unsigned int l=0; l<L1Cache.c.size(); l++){
-                    if(L1Cache.c[l].set_index_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(set_index_str_L1)){
-                        if(L1Cache.c[l].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(tag_str_L1)){
-                            cout<<"Write Hit"<<endl;
-                            isWriteHit=true;
-                            L1AcceState = WH;
-                            break;
-                        }
+                bool isWriteHit = false;
+                for(unsigned int k=0; k<L1Cache.c.size(); k++){
+                    if(L1Cache.c[k].valid_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == bitset<1>(0)){
+                        L1AcceState = WM;
+                        isWriteHit = false;
                     } else{
-                        cout<<"Write Miss"<<endl;
-                        L1AcceState=WM;
-                        cout<<"Write to L1"<<endl;
-                        L1Cache.c[l].set_index_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(set_index_str_L1);
-                        L1Cache.c[l].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(tag_str_L1);
-                        L1Cache.c[l].offset_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = L1Cache.stringToVectBool(offset_str_L1);
+                        if(L1Cache.c[k].tag_arr[(bitset<32>(set_index_str_L1)).to_ulong()] == L1Cache.stringToVectBool(tag_str_L1)){
+                            cout<<"Write Hit in L1"<<endl;
+                            L1Cache.c[k].dirty_bit_arr[(bitset<32>(set_index_str_L1)).to_ulong()] = bitset<1>(1);
+                            L1AcceState = WH;
+                            isWriteHit = true;
+                            break;
+                        } else{
+                            L1AcceState = WM;
+                            isWriteHit = false;
+                        }
+                    }
+                }
+
+                if(!isWriteHit){
+                    for(unsigned int l=0; l<L2Cache.c.size(); l++){
+                        if(L2Cache.c[l].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == bitset<1>(0)){
+                            L2AcceState = WM;
+                            isWriteHit = false;
+                        } else{
+                            if(L2Cache.c[l].tag_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == L2Cache.stringToVectBool(tag_str_L2)){
+                                cout<<"Write Hit in L2"<<endl;
+                                L2Cache.c[l].dirty_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] = bitset<1>(1);
+                                L2AcceState = WH;
+                                isWriteHit = true;
+                                break;
+                            } else{
+                                L2AcceState = WM;
+                                isWriteHit = false;
+                            }
+                        }
                     }
                 }
             }
@@ -284,5 +312,6 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
+
 
 
