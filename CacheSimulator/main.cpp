@@ -120,6 +120,30 @@ class cache_final
         }
 };
 
+class printCache{
+
+    public:
+        string getCacheData(cache_final cache, string index){
+            string cacheData = "";
+            unsigned long i = bitset<32>(index).to_ulong();
+                for(unsigned int j=0; j<cache.c.size(); j++){
+                    cacheData = cacheData + cache.vectBoolToString(cache.c[j].tag_arr[i]) + "|";
+                    cacheData = cacheData + cache.vectBoolToString(cache.c[j].set_index_arr[i]) + "|";
+                    cacheData = cacheData + cache.vectBoolToString(cache.c[j].offset_arr[i]) + "|";
+                    cacheData = cacheData + cache.c[j].valid_bit_arr[i].to_string() + "|";
+                    cacheData = cacheData + cache.c[j].dirty_bit_arr[i].to_string() + " ## ";
+                    if(j == cache.c.size()-1){
+                        ostringstream conv1, conv2;
+                        conv1 << cache.way_arr[i];
+                        cacheData = cacheData + conv1.str() + " * ";
+                        conv2 << i;
+                        cacheData = cacheData + conv2.str();
+                    }
+                }
+            return cacheData;
+        }
+};
+
 int main(int argc, char* argv[]){
 
     config cacheconfig;
@@ -153,9 +177,13 @@ int main(int argc, char* argv[]){
 
 
     ifstream traces;
-    ofstream tracesout;
+    ofstream tracesout, L1CacheOut, L2CacheOut;
     string outname;
     outname = string("trace") + ".out";
+
+    L1CacheOut.open("L1Cache.txt");
+    L2CacheOut.open("L2Cache.txt");
+    printCache cacheData;
 
     traces.open("trace.txt");
     tracesout.open(outname.c_str());
@@ -166,7 +194,7 @@ int main(int argc, char* argv[]){
     unsigned int addr;  // the address from the memory trace store in unsigned int;
     bitset<32> accessaddr; // the address from the memory trace store in the bitset;
 
-    if (traces.is_open()&&tracesout.is_open()){
+    if (traces.is_open()&&tracesout.is_open() && L1CacheOut.is_open() && L2CacheOut.is_open()){
         while (getline (traces,line)){   // read mem access file and access Cache
 
             istringstream iss(line);
@@ -175,7 +203,7 @@ int main(int argc, char* argv[]){
             saddr >> std::hex >> addr;
             accessaddr = bitset<32> (addr);
 
-
+            string L1CacheData, L2CacheData;
 
             string addr_str = accessaddr.to_string();
             string tag_str_L1 = addr_str.substr(0, L1Cache.c[0].t);
@@ -235,12 +263,10 @@ int main(int argc, char* argv[]){
                  if(L1isFull){
                     setL1Way = L1Cache.way_arr[(bitset<32>(set_index_str_L1)).to_ulong()];
                     cout<<"Ways are full## current way: "<<setL1Way<<endl;
-                    if(L1Cache.c.size() > 1){
-                        if(setL1Way == 3){
-                            setL1Way = 0;
-                        } else{
-                            setL1Way++;
-                        }
+                    if(setL1Way == L1Cache.c.size()-1){
+                        setL1Way = 0;
+                    } else{
+                        setL1Way++;
                     }
                     cout<<"Ways are full## eviction way: "<<setL1Way<<endl;
                     for(unsigned int x=0; x<L1Cache.c.size(); x++){
@@ -270,7 +296,6 @@ int main(int argc, char* argv[]){
                     }
                 }
 
-
                  if(!isReadHit){
                     for(unsigned int k=0; k<L2Cache.c.size(); k++){
                         if(L2Cache.c[k].valid_bit_arr[(bitset<32>(set_index_str_L2)).to_ulong()] == bitset<1>(0)){
@@ -298,7 +323,7 @@ int main(int argc, char* argv[]){
                      }
                      if(L2isFull){
                         setL2Way = L2Cache.way_arr[(bitset<32>(set_index_str_L2)).to_ulong()];
-                        if(setL2Way == 3){
+                        if(setL2Way == L2Cache.c.size()-1){
                             setL2Way = 0;
                         } else{
                             setL2Way++;
@@ -393,6 +418,10 @@ int main(int argc, char* argv[]){
                 }
             }
 
+            L1CacheData = cacheData.getCacheData(L1Cache, set_index_str_L1);
+            L2CacheData = cacheData.getCacheData(L2Cache, set_index_str_L2);
+            L1CacheOut<<L1CacheData<<endl;
+            L2CacheOut<<L2CacheData<<endl;
 
             cout<<"==============================================="<<endl;
 
